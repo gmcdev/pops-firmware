@@ -1,0 +1,16 @@
+# environment variables
+.env
+.env.*
+
+# platformio
+.pio/
+
+# build
+build/
+
+# os
+.DS_Store
+
+# ide
+.idea/
+.vscode/
