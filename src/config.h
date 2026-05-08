@@ -41,8 +41,19 @@
 #define PIN_OLED_SCL  22
 
 // Relay and start button
-#define PIN_RELAY      26
-#define PIN_START_BTN  27
+// PIN_RELAY: relay output (GPIO 26).
+// PIN_START_COL: column wire via 33kΩ/47kΩ divider → GPIO 25 (digital interrupt).
+// PIN_START_ADC: row wire via 33kΩ/47kΩ divider → GPIO 34 (ADC1_CH6, WiFi-safe).
+//   Both require shared ground (ESP32 powered from machine 5V).
+//
+// Detection: column ISR fires on FALLING edge → high-priority FreeRTOS task
+// delays 75μs (capacitive coupling spike decays) → reads row ADC.
+//   Row at idle/strobe (3.21V): ADC ~2340 → above threshold → no detection.
+//   Row with switch closed (~0.4V): ADC ~295 → below threshold → detected.
+#define PIN_RELAY              26
+#define PIN_START_COL          25
+#define PIN_START_ADC          34
+#define ADC_SWITCH_THRESHOLD   200
 
 // ---------------------------------------------------------------------------
 // OLED display
@@ -67,10 +78,38 @@
 #define RELAY_PULSE_GAP_MS       200
 
 // ---------------------------------------------------------------------------
+// Session window expiry
+// If the player opens a session window but never presses start, the window
+// closes automatically after this interval and the display returns to Idle.
+// ---------------------------------------------------------------------------
+#define WINDOW_EXPIRY_MS  60000
+
+// ---------------------------------------------------------------------------
 // WiFi reconnect backoff (milliseconds)
 // ---------------------------------------------------------------------------
 #define WIFI_RECONNECT_BASE_MS   1000
 #define WIFI_RECONNECT_MAX_MS   30000
+
+// ---------------------------------------------------------------------------
+// MQTT broker
+// ---------------------------------------------------------------------------
+#ifndef MQTT_BROKER
+#  error "MQTT_BROKER is not defined. Add MQTT_BROKER=<value> to .env.local."
+#endif
+
+#ifndef MQTT_USERNAME
+#  error "MQTT_USERNAME is not defined. Add MQTT_USERNAME=<value> to .env.local."
+#endif
+
+#ifndef MQTT_PASSWORD
+#  error "MQTT_PASSWORD is not defined. Add MQTT_PASSWORD=<value> to .env.local."
+#endif
+
+#define MQTT_PORT                8883
+#define MQTT_COMMAND_TOPIC       "devices/" DEVICE_ID "/commands"
+#define MQTT_STATUS_TOPIC        "devices/" DEVICE_ID "/status"
+#define MQTT_RECONNECT_BASE_MS   2000
+#define MQTT_RECONNECT_MAX_MS   60000
 
 // ---------------------------------------------------------------------------
 // API endpoints (paths only — prepend BACKEND_URL at call site)

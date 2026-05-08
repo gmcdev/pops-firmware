@@ -372,9 +372,9 @@ static bool initAsTarget() {
     }
 
     // Block until the PN532 signals it has been activated by a reader.
-    // timeout=500ms: if no reader appears in 500ms, return false and let
-    // the main loop cycle (token rotation, WiFi maintain) before retrying.
-    if (!pn532.waitReady(500)) {
+    // timeout=5ms: short so the main loop cycles frequently for relay ADC
+    // sampling. nfcLoop() is called again immediately on the next iteration.
+    if (!pn532.waitReady(5)) {
         return false;
     }
 
